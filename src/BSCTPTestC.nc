@@ -65,6 +65,5 @@ implementation{
 
 	event void TelosbTimeSyncBS.SyncDone(uint32_t RealTime){
 		ADtime = RealTime;
-		call Leds.led2Toggle();
 	}
 }
