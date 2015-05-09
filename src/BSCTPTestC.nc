@@ -37,6 +37,7 @@ implementation{
 	uint32_t ADtime = 0;
 	
 	event void Boot.booted(){
+		call TelosbTimeSyncBS.Sync();
 		call RadioControl.start();	
 	}
 	
