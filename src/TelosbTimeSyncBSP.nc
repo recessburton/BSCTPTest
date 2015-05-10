@@ -31,7 +31,6 @@ module TelosbTimeSyncBSP {
 	uses interface AMSend;
 	uses interface SplitControl as AMControl;
 	uses interface LocalTime<TMilli> as BaseTime;
-	uses interface Leds;
 
 }
 implementation {

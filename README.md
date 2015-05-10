@@ -17,7 +17,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 Description：
 	Telosb 带有CTP协议的基站测试程序.
-
+	
+Logs：
+	V1.0 全功能版本，将收到的数据包按照DataFormat重新格式化，发送给USB串口.
+	V0.3 带有CTP和时间同步功能的数据接收
 	
 Known Bugs: 
 		none.

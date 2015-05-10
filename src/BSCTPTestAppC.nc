@@ -29,6 +29,8 @@ implementation{
 	components new CollectionSenderC(0xee);
 	components TelosbTimeSyncBSC;
 	
+	components new Msp430Uart1C() as UartC;
+	
 	App.Boot                             -> MainC;
 	App.RadioControl            -> ActiveMessageC;
 	App.RoutingControl        -> Collector;
@@ -37,4 +39,9 @@ implementation{
 	App.RootControl             -> Collector;
 	App.Receive                       -> Collector.Receive[0xee];
 	App.TelosbTimeSyncBS -> TelosbTimeSyncBSC;
+	
+	App.Resource                   -> UartC.Resource;
+	App.UartStream              -> UartC.UartStream;
+	App.UartConfigure         <- UartC.Msp430UartConfigure;
+	
 }

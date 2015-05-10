@@ -27,7 +27,6 @@ configuration TelosbTimeSyncBSC {
 }
 
 implementation {
-	components LedsC;
 	components TelosbTimeSyncBSP as App;
 	components new TimerMilliC() as Timer0;
 	components ActiveMessageC;
@@ -37,7 +36,6 @@ implementation {
 
 	TelosbTimeSyncBS = App.TelosbTimeSyncBS;
 
-	App.Leds->LedsC;
 	App.Timer0->Timer0;
 	App.Packet->AM1;
 	App.AMSend->AM1;
