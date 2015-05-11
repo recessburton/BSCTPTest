@@ -19,6 +19,7 @@ Description：
 	Telosb 带有CTP协议的基站测试程序.
 	
 Logs：
+	V1.1 完善了时间获取机制，在PC数据包中加入了BS时间字段
 	V1.0 全功能版本，将收到的数据包按照DataFormat重新格式化，发送给USB串口.
 	V0.3 带有CTP和时间同步功能的数据接收
 	

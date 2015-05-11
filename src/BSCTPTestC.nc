@@ -21,6 +21,7 @@
  **/
 
 #include "EcolStationBS.h"
+#include <stdio.h>
 module BSCTPTestC{
 	provides {
 		interface Msp430UartConfigure as UartConfigure;
@@ -42,10 +43,7 @@ module BSCTPTestC{
 implementation{
 	
 	uint8_t ecolStationData[DATASIZE];
-	uint8_t AMrecvdataTemp[DATASIZE - 2 ];
-
-	
-	uint32_t realtime = 0;
+	uint8_t AMrecvdataTemp[DATASIZE - 6 ];
 	
 	task void requestUART();
 	task void releaseUART();
@@ -124,20 +122,26 @@ implementation{
 	event message_t* Receive.receive(message_t* msg, void* payload, uint8_t len){
 		CTPMsg* ctpmsg = (CTPMsg*)payload;
 		int i;
-		memset(AMrecvdataTemp,DATASIZE-2,0);
+		uint32_t realtime = 0;
+		memset(AMrecvdataTemp,DATASIZE-6,0);
 		memset(ecolStationData,DATASIZE,0);
-
 		
-		if(len == DATASIZE-2) 
+		if(len == DATASIZE-6) 
 		{
 			call Leds.led1Toggle();
-			memcpy(AMrecvdataTemp, ctpmsg, DATASIZE-2);
+			memcpy(AMrecvdataTemp, ctpmsg, DATASIZE-6);
 			ecolStationData[0] = 0x56;
 			ecolStationData[DATASIZE-1] = 0xAA;
 			
-			for (i = 1;i < DATASIZE-1; i++)
+			for (i = 1;i < DATASIZE-5; i++)
 				ecolStationData[i] = AMrecvdataTemp[i - 1];
+				
 			call Leds.led0On();
+			realtime = call TelosbTimeSyncBS.getTime();
+			ecolStationData[DATASIZE-5] =(unsigned char) (realtime >>24); //加入基站时间值，4字节
+			ecolStationData[DATASIZE-4] =(unsigned char) ((realtime&0xff0000) >>16);
+			ecolStationData[DATASIZE-3] =(unsigned char) ((realtime&0xff00) >>8);
+			ecolStationData[DATASIZE-2] =(unsigned char) (realtime&0xff);
 			call UartStream.send(ecolStationData, DATASIZE);
 		}
 		return msg;	
@@ -145,6 +149,5 @@ implementation{
 	
 
 	event void TelosbTimeSyncBS.SyncDone(uint32_t RealTime){
-		realtime = RealTime;
 	}
 }

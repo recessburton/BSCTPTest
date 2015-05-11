@@ -23,5 +23,6 @@
 
 interface TelosbTimeSyncBS{
 	command error_t Sync();
+	command uint32_t getTime();
 	event void SyncDone(uint32_t RealTime);
 }

@@ -10,6 +10,6 @@ typedef nx_struct CTPMsg{
 	nx_uint32_t eventtime;		//	包产生时间
 }CTPMsg;										//共120bit，15字节
 
-#define DATASIZE (sizeof(CTPMsg)+2)
+#define DATASIZE (sizeof(CTPMsg)+6)
 
 #endif /* ECOL_STATION_BS_H */

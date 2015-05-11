@@ -84,5 +84,10 @@ implementation {
 		call AMControl.start();
 		return TRUE;
 	}
+	
+	command uint32_t TelosbTimeSyncBS.getTime(){
+		uint32_t time = call BaseTime.get();
+		return  time;
+	}
 
 }
