@@ -28,6 +28,7 @@ implementation{
 	components CollectionC as Collector;
 	components new CollectionSenderC(0xee);
 	components TelosbTimeSyncBSC;
+	components new TimerMilliC() as Timer0;
 	
 	components new Msp430Uart1C() as UartC;
 	
@@ -38,6 +39,7 @@ implementation{
 	App.Send                            -> CollectionSenderC;
 	App.RootControl             -> Collector;
 	App.Receive                       -> Collector.Receive[0xee];
+	App.Timer0->Timer0;
 	App.TelosbTimeSyncBS -> TelosbTimeSyncBSC;
 	
 	App.Resource                   -> UartC.Resource;
