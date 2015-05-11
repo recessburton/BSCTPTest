@@ -45,9 +45,10 @@ implementation{
 	
 	uint8_t ecolStationData[DATASIZE];
 	uint8_t timeTriggerData[DATASIZE];
-	uint8_t AMrecvdataTemp[DATASIZE - 6 ];
+	uint8_t AMrecvdataTemp[DATASIZE - 2 ];
 	bool timeTrigger = FALSE;			     //时间进位预触发
 	uint8_t triggerFreezeCount = 9;	//时间进位锁，一次冻结时间为接10个包的时间，防止了进位定时器短时间内被误触发
+	uint32_t timeInterval = 0;
 	
 	task void requestUART();
 	task void releaseUART();
@@ -127,17 +128,17 @@ implementation{
 		CTPMsg* ctpmsg = (CTPMsg*)payload;
 		int i;
 		uint32_t realtime = 0;
-		memset(AMrecvdataTemp,DATASIZE-6,0);
+		memset(AMrecvdataTemp,DATASIZE-2,0);
 		memset(ecolStationData,DATASIZE,0);
 		
-		if(len == DATASIZE-6) 
+		if(len == DATASIZE-2) 
 		{
 			call Leds.led1Toggle();
-			memcpy(AMrecvdataTemp, ctpmsg, DATASIZE-6);
+			memcpy(AMrecvdataTemp, ctpmsg, DATASIZE-2);
 			ecolStationData[0] = 0x56;
 			ecolStationData[DATASIZE-1] = 0xAA;
 			
-			for (i = 1;i < DATASIZE-5; i++)
+			for (i = 1;i < DATASIZE-1; i++)
 				ecolStationData[i] = AMrecvdataTemp[i - 1];
 				
 			call Leds.led0On();
@@ -162,11 +163,12 @@ implementation{
 				triggerFreezeCount = 9;
 				call Timer0.stop();
 			}
-				
-			ecolStationData[DATASIZE-5] =(unsigned char) (realtime >>24); //加入基站时间值，4字节
-			ecolStationData[DATASIZE-4] =(unsigned char) ((realtime&0xff0000) >>16);
-			ecolStationData[DATASIZE-3] =(unsigned char) ((realtime&0xff00) >>8);
-			ecolStationData[DATASIZE-2] =(unsigned char) (realtime&0xff);
+			
+			timeInterval = realtime - ctpmsg ->time;	
+			ecolStationData[DATASIZE-5] =(unsigned char) (timeInterval >>24); //替换时间值为时间差，4字节
+			ecolStationData[DATASIZE-4] =(unsigned char) ((timeInterval&0xff0000) >>16);
+			ecolStationData[DATASIZE-3] =(unsigned char) ((timeInterval&0xff00) >>8);
+			ecolStationData[DATASIZE-2] =(unsigned char) (timeInterval&0xff);
 			call UartStream.send(ecolStationData, DATASIZE);
 		}
 		return msg;	
