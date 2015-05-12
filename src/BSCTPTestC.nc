@@ -34,7 +34,6 @@ module BSCTPTestC{
 		interface Leds;
 		interface RootControl;
 		interface Receive;
-		interface Timer<TMilli> as Timer0;
 		interface TelosbTimeSyncBS;
 		
 		interface Resource;
@@ -46,8 +45,6 @@ implementation{
 	uint8_t ecolStationData[DATASIZE];
 	uint8_t timeTriggerData[DATASIZE];
 	uint8_t AMrecvdataTemp[DATASIZE - 2 ];
-	bool timeTrigger = FALSE;			     //时间进位预触发
-	uint8_t triggerFreezeCount = 9;	//时间进位锁，一次冻结时间为接10个包的时间，防止了进位定时器短时间内被误触发
 	uint32_t timeInterval = 0;
 	
 	task void requestUART();
@@ -143,26 +140,6 @@ implementation{
 				
 			call Leds.led0On();
 			realtime = call TelosbTimeSyncBS.getTime();
-			if(realtime >= 4000000000){
-				if (timeTrigger)
-				{
-					if(triggerFreezeCount == 0){
-						triggerFreezeCount = 9;
-						call Timer0.stop();					//停止之前的计时器，启动新的更准确的计时器
-						call Timer0.startOneShot(4294967295 - realtime + 500);
-					}else{
-						triggerFreezeCount -- ;
-					}
-				}
-				else{
-					timeTrigger = TRUE;
-					triggerFreezeCount = 9;
-					call Timer0.startOneShot(4294967295 - realtime);
-				}
-			}else{
-				triggerFreezeCount = 9;
-				call Timer0.stop();
-			}
 			
 			timeInterval = realtime - ctpmsg ->time;	
 			ecolStationData[DATASIZE-5] =(unsigned char) (timeInterval >>24); //替换时间值为时间差，4字节
@@ -176,14 +153,5 @@ implementation{
 	
 
 	event void TelosbTimeSyncBS.SyncDone(uint32_t RealTime){
-	}
-
-	event void Timer0.fired(){
-		timeTrigger = FALSE;
-		triggerFreezeCount = 9;
-		memset(timeTriggerData,DATASIZE,0);
-		timeTriggerData[0] = 0x56;
-		timeTriggerData[DATASIZE-1] = 0xAA;
-		call UartStream.send(timeTriggerData, DATASIZE);
 	}
 }
