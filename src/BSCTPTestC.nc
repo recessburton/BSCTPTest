@@ -35,6 +35,7 @@ module BSCTPTestC{
 		interface RootControl;
 		interface Receive;
 		interface TelosbTimeSyncBS;
+		interface EcolStationNeighbourBS;
 		
 		interface Resource;
 		interface UartStream;
@@ -53,7 +54,8 @@ implementation{
 	event void Boot.booted(){
 		call TelosbTimeSyncBS.Sync();
 		call RadioControl.start();	
-		post requestUART();				//可以向传感器们发送指令
+		call EcolStationNeighbourBS.startNei();
+		post requestUART();				//请求uart总线
 	}
 	
 	msp430_uart_union_config_t msp430_uart_config = {{ ubr : UBR_1MHZ_115200, // Baud rate (use enum msp430_uart_rate_t in msp430usart.h for predefined rates)

@@ -28,6 +28,7 @@ implementation{
 	components CollectionC as Collector;
 	components new CollectionSenderC(0xee);
 	components TelosbTimeSyncBSC;
+	components EcolStationNeighbourBSC;
 	
 	components new Msp430Uart1C() as UartC;
 	
@@ -43,5 +44,8 @@ implementation{
 	App.Resource                   -> UartC.Resource;
 	App.UartStream              -> UartC.UartStream;
 	App.UartConfigure         <- UartC.Msp430UartConfigure;
+	
+	App.EcolStationNeighbourBS -> EcolStationNeighbourBSC;
+	
 	
 }
