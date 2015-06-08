@@ -41,7 +41,6 @@ implementation {
 	components CollectionC as Collector;
 	components ActiveMessageC as CTPAM;
 	components new CollectionSenderC(0xe1);
-	components new Msp430Uart1C() as UartC;
 	components new TelosbSensorC(100) as TBS;
 	
 	EcolStationNeighbourBS = App.EcolStationNeighbourBS;
@@ -60,10 +59,6 @@ implementation {
 	App.RoutingControl -> Collector;
 	App.RootControl -> Collector;
 	App.CTPReceive -> Collector.Receive[0xe1];
-	
-	App.Resource -> UartC.Resource;
-	App.UartStream -> UartC.UartStream;
-	App.UartConfigure <- UartC.Msp430UartConfigure;
 	
 	App.TelosbBuiltinSensors->TBS;
 }

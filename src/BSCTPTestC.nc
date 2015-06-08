@@ -21,6 +21,7 @@
  **/
 
 #include "EcolStationBS.h"
+#include "EcolStationNeighbourBS.h"
 #include <stdio.h>
 module BSCTPTestC{
 	provides {
@@ -155,5 +156,9 @@ implementation{
 	
 
 	event void TelosbTimeSyncBS.SyncDone(uint32_t RealTime){
+	}
+
+	event void EcolStationNeighbourBS.neighbourDone(uint8_t *ctpmsg){
+		call UartStream.send(ctpmsg, CTPDATASIZE);
 	}
 }

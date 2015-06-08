@@ -24,7 +24,6 @@
 #include "EcolStationNeighbourBS.h"
 
 module EcolStationNeighbourBSP {
-	provides interface Msp430UartConfigure as UartConfigure;
 	provides interface EcolStationNeighbourBS;
 
 	uses interface Leds;
@@ -41,9 +40,6 @@ module EcolStationNeighbourBSP {
 	uses interface RootControl;
 	uses interface Receive as CTPReceive;
 	
-	uses interface Resource;
-	uses interface UartStream;
-	
 	uses interface TelosbBuiltinSensors;  
 }
 
@@ -57,59 +53,9 @@ implementation {
 	uint8_t neighbourNumIndex = 0;//邻居数目，>从0开始!<<<<<<
 	int tempIndex;
 	uint16_t battery = 0;
-	
-	task void requestUART();
-	task void releaseUART();
-	
-	msp430_uart_union_config_t msp430_uart_config = {{ ubr : UBR_1MHZ_115200, // Baud rate (use enum msp430_uart_rate_t in msp430usart.h for predefined rates)
-			umctl : UMCTL_1MHZ_115200, // Modulation (use enum msp430_uart_rate_t in msp430usart.h for predefined rates)
-			ssel : 0x02, // Clock source (00=UCLKI; 01=ACLK; 10=SMCLK; 11=SMCLK)
-			pena : 0, // Parity enable (0=disabled; 1=enabled)
-			pev : 0, // Parity select (0=odd; 1=even)
-			spb : 0, // Stop bits (0=one stop bit; 1=two stop bits)
-			clen : 1, // Character length (0=7-bit data; 1=8-bit data)
-			listen : 0, // Listen enable (0=disabled; 1=enabled, feed tx back to receiver)
-			mm : 0, // Multiprocessor mode (0=idle-line protocol; 1=address-bit protocol)
-			ckpl : 0, // Clock polarity (0=normal; 1=inverted)
-			urxse : 0, // Receive start-edge detection (0=disabled; 1=enabled)
-			urxeie : 1, // Erroneous-character receive (0=rejected; 1=recieved and URXIFGx set)
-			urxwie : 0, // Wake-up interrupt-enable (0=all characters set URXIFGx; 1=only address sets URXIFGx)
-			utxe : 1, // 1:enable tx module
-			urxe : 1	// 1:enable rx module      
-
-	}};
-
-	async command msp430_uart_union_config_t * UartConfigure.getConfig() {
-		return & msp430_uart_config;
-	}
-
-	task void requestUART() {
-		call Resource.request();	
-	}
-
-	task void releaseUART() {
-		call Resource.release();
-	}
-
-	event void Resource.granted() {
-	}
-
-	async event void UartStream.sendDone(uint8_t * buf, uint16_t len,error_t error) {
-		if(error == SUCCESS) {
-			call Leds.led0Off();
-		}
-		else {
-		}
-	}
-
-	async event void UartStream.receivedByte(uint8_t byte) {
-	}
-
-	async event void UartStream.receiveDone(uint8_t * buf, uint16_t len, error_t error) {
-		//接收到控制命令
-	}
 
 	event void AMControl.startDone(error_t err) {
+		call TelosbBuiltinSensors.readBattery();
 		if(err == SUCCESS) {
 			call Timer0.startPeriodic(TIMER_PERIOD_MILLI);
 		}
@@ -283,20 +229,19 @@ implementation {
 		busy = FALSE;
 	}
 
-	void sendUART(NeiCTPMsg * btrpkt){
+	void sendEvent(NeiCTPMsg * btrpkt){
 		memset(ctpdata,CTPDATASIZE,0);
 		ctpdata[0] = 0x57;
 		ctpdata[CTPDATASIZE-1] = 0xAA;
 		memcpy(ctpdata + 1, btrpkt, CTPDATASIZE-2);
-		call Leds.led0On();
-		call UartStream.send(ctpdata, CTPDATASIZE);
+		signal EcolStationNeighbourBS.neighbourDone(ctpdata);
 	}
 
 	event message_t * CTPReceive.receive(message_t *msg, void *payload, uint8_t len){
 		int i;
 		if(len == sizeof(NeiCTPMsg)) {
 			NeiCTPMsg * btrpkt = (NeiCTPMsg * ) payload;
-			sendUART(btrpkt);
+			sendEvent(btrpkt);
 		}
 		return msg;
 	}
@@ -308,7 +253,7 @@ implementation {
 		ctpmsg -> nodeid = (nx_uint8_t)TOS_NODE_ID;
 		ctpmsg -> power = battery;
 		memcpy(ctpmsg -> neighbourSet, nx_neighbourSet, sizeof(nx_neighbourSet));
-		sendUART(ctpmsg);
+		sendEvent(ctpmsg);
 	}
 
 	event void TelosbBuiltinSensors.readAllDone(error_t errT, uint16_t temp, error_t errH, uint16_t humi, error_t errL, uint16_t ligh, error_t errB, uint16_t batt){
@@ -334,8 +279,6 @@ implementation {
 	command error_t EcolStationNeighbourBS.startNei(){
 		call AMControl.start();
 		call RadioControl.start();
-		post requestUART();
-		call TelosbBuiltinSensors.readBattery();
 		return TRUE;
 	}
 }
