@@ -56,3 +56,8 @@ ifdef APP_MAKERULES
 else
   include $(MAKERULES)
 endif
+
+CFLAGS += -DTOSH_DATA_LENGTH=35 \
+          -DCC2420_DEF_RFPOWER=31
+
+
