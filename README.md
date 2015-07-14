@@ -19,6 +19,7 @@ Description：
 	Telosb 带有CTP协议的基站测试程序.
 	
 Logs：
+	V1.8 更新邻居发现组件为V0.5版本,修正邻居关系无法报告的问题
 	V1.7 更新邻居发现组件为V0.4版本
 	V1.6 发射功率调至最大，无线payload增大至35字节，在makefile中设置
 	V1.5 加入了邻居节点信息的收集功能，BS通过CTP收集各个节点的邻居关系集(EcolStationNeighbourBS接口)，并通过UART发送给PC.
