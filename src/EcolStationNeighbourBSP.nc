@@ -183,7 +183,7 @@ implementation {
 				if(helloMsgCount < 20)
 					totalhello = helloMsgCount;
 				linkq = (float) (neighbourSet[i].recvCount / ((totalhello -10)* 1.0));
-				neighbourSet[i].linkquality = (linkq>100) ? 100 : linkq;
+				neighbourSet[i].linkquality = (linkq>1) ? 1 : linkq;
 			}else{
 				continue;
 			}

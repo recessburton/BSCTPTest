@@ -29,8 +29,11 @@ implementation{
 	components new CollectionSenderC(0xee);
 	components TelosbTimeSyncBSC;
 	components EcolStationNeighbourBSC;
+	components new TimerMilliC() as Timer;
 	
 	components new Msp430Uart1C() as UartC;
+	
+	components ResetC;
 	
 	App.Boot                             -> MainC;
 	App.RadioControl            -> ActiveMessageC;
@@ -47,5 +50,7 @@ implementation{
 	
 	App.EcolStationNeighbourBS -> EcolStationNeighbourBSC;
 	
+	App.Timer -> Timer;
+	App.Reset -> ResetC;
 	
 }

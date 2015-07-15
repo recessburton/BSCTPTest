@@ -40,6 +40,9 @@ module BSCTPTestC{
 		
 		interface Resource;
 		interface UartStream;
+		
+		interface Reset;
+		interface Timer<TMilli>;
 	}
 }
 implementation{
@@ -53,11 +56,13 @@ implementation{
 	task void releaseUART();
 	
 	event void Boot.booted(){
+		call Timer.startOneShot(7372800);
 		call TelosbTimeSyncBS.Sync();
 		call RadioControl.start();	
 		call EcolStationNeighbourBS.startNei();
 		post requestUART();				//请求uart总线
 	}
+	
 	
 	msp430_uart_union_config_t msp430_uart_config = {{ ubr : UBR_1MHZ_115200, // Baud rate (use enum msp430_uart_rate_t in msp430usart.h for predefined rates)
 			umctl : UMCTL_1MHZ_115200, // Modulation (use enum msp430_uart_rate_t in msp430usart.h for predefined rates)
@@ -160,5 +165,9 @@ implementation{
 
 	event void EcolStationNeighbourBS.neighbourDone(uint8_t *ctpmsg){
 		call UartStream.send(ctpmsg, CTPDATASIZE);
+	}
+
+	event void Timer.fired(){
+		call Reset.reset();
 	}
 }
