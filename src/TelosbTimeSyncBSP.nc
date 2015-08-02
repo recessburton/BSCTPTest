@@ -63,7 +63,8 @@ implementation {
 
 	event void AMControl.startDone(error_t err) {
 		if(err == SUCCESS) {
-			call Timer0.startPeriodic(1024 * 5);
+			signal Timer0.fired();			//启动后马上发布一次时间信息
+			call Timer0.startPeriodic(1024 * 30);
 		}
 		else {
 			call AMControl.start();

@@ -96,11 +96,9 @@ implementation {
 			call Timer1.stop();						//暂时停止邻居关系消息的发送
 			helloMsgCount = 0;
 			//内存中的邻居关系数据清空
-			busy = TRUE;									//暂时设置无线为不可用，不接收过时的邻居关系回包
 			neighbourNumIndex = 0;
 			memset(neighbourSet,10*MAX_NEIGHBOUR_NUM,0);
 			memset(nx_neighbourSet, MAX_NEIGHBOUR_NUM,0);
-			busy = FALSE;
 		}
 	}
 
@@ -218,7 +216,7 @@ implementation {
 			if(btrpkt->dstid == 0xFF){	//接到其它节点发的hello包，回ack包
 				ackMsgSend(btrpkt->sourceid);
 			}
-			else if ( (btrpkt->dstid - TOS_NODE_ID) == 0 && busy == FALSE) {	//接到的是自己的回包，计算链路质量，判断邻居资格
+			else if ( (btrpkt->dstid - TOS_NODE_ID) == 0) {	//接到的是自己的回包，计算链路质量，判断邻居资格
 				addSet(btrpkt->sourceid);
 				estLinkQuality(btrpkt->sourceid);
 			}else{	//其它包，丢弃

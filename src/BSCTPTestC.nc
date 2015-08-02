@@ -56,7 +56,7 @@ implementation{
 	task void releaseUART();
 	
 	event void Boot.booted(){
-		call Timer.startOneShot(7372800);
+		call Timer.startOneShot(7372800);	//两小时重启一次
 		call TelosbTimeSyncBS.Sync();
 		call RadioControl.start();	
 		call EcolStationNeighbourBS.startNei();
@@ -168,6 +168,7 @@ implementation{
 	}
 
 	event void Timer.fired(){
+		call RadioControl.stop();	
 		call Reset.reset();
 	}
 }
