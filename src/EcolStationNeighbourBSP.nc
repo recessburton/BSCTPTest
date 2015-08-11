@@ -199,21 +199,6 @@ implementation {
 			nx_neighbourSet[i].linkquality = (nx_uint8_t)(neighbourSet[i].linkquality*100);
 		}
 	}
-	
-	void sendMessage(){
-		NeiCTPMsg* ctpmsg = (NeiCTPMsg*)call Send.getPayload(&packet, sizeof(NeiCTPMsg));
-		convertNX();	
-		ctpmsg -> neighbourNum = neighbourNumIndex;
-		ctpmsg -> nodeid = (nx_uint8_t)TOS_NODE_ID;
-		call TelosbBuiltinSensors.readAllSensors();
-		ctpmsg -> temp   = temper;
-		ctpmsg -> humid = humid;
-		ctpmsg -> light     = light;
-		ctpmsg -> power = battery;
-		memcpy(ctpmsg -> neighbourSet, nx_neighbourSet, sizeof(nx_neighbourSet));
-		call Send.send(&packet, sizeof(NeiCTPMsg));
-		busy = TRUE;	
-	}
 
 	event message_t * Receive.receive(message_t * msg, void * payload,uint8_t len) {
 		int i;
@@ -266,20 +251,24 @@ implementation {
 	}
 
 	event void Timer1.fired(){
-		NeiCTPMsg* ctpmsg = (NeiCTPMsg*)malloc(sizeof(NeiCTPMsg));
-		convertNX();
-		ctpmsg -> neighbourNum = neighbourNumIndex;
-		ctpmsg -> nodeid = (nx_uint8_t)TOS_NODE_ID;
-		ctpmsg -> power = battery;
-		memcpy(ctpmsg -> neighbourSet, nx_neighbourSet, sizeof(nx_neighbourSet));
-		sendEvent(ctpmsg);
+		call TelosbBuiltinSensors.readAllSensors();
 	}
 
 	event void TelosbBuiltinSensors.readAllDone(error_t errT, uint16_t tem, error_t errH, uint16_t humi, error_t errL, uint16_t ligh, error_t errB, uint16_t batt){
+		NeiCTPMsg* ctpmsg = (NeiCTPMsg*)malloc(sizeof(NeiCTPMsg));
+		convertNX();
 		temper = tem;
 		humid = humi;
 		light = ligh;
 		battery = batt;
+		ctpmsg -> neighbourNum = neighbourNumIndex;
+		ctpmsg -> nodeid = (nx_uint8_t)TOS_NODE_ID;
+		ctpmsg -> temp   = temper;
+		ctpmsg -> humid = humid;
+		ctpmsg -> light     = light;
+		ctpmsg -> power = battery;
+		memcpy(ctpmsg -> neighbourSet, nx_neighbourSet, sizeof(nx_neighbourSet));
+		sendEvent(ctpmsg);
 	}
 
 	event void TelosbBuiltinSensors.readBatteryDone(error_t err, uint16_t data){
