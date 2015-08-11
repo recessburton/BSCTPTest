@@ -29,10 +29,13 @@ typedef nx_struct nx_NeighbourUnit {
 } nx_NeighbourUnit;
 
 typedef nx_struct NeiCTPMsg{
-	//send的payload最大为20字节，此处尽量减少数据空间
+	//send的payload最大为32字节，此处尽量减少数据空间
 	nx_int8_t neighbourNum;
 	nx_int8_t nodeid;
-	nx_int16_t power;				
+	nx_int16_t power;	
+	nx_int16_t temp;
+	nx_int16_t humid;
+	nx_int16_t light;					
 	nx_NeighbourUnit neighbourSet[MAX_NEIGHBOUR_NUM];
 }NeiCTPMsg;
 
