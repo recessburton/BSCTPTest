@@ -29,7 +29,6 @@ module TelosbTimeSyncBSP {
 	uses interface Timer<TMilli> as Timer0;
 	uses interface Packet;
 	uses interface AMSend;
-	uses interface SplitControl as AMControl;
 	uses interface LocalTime<TMilli> as BaseTime;
 
 }
@@ -61,19 +60,6 @@ implementation {
 		}
 	}
 
-	event void AMControl.startDone(error_t err) {
-		if(err == SUCCESS) {
-			signal Timer0.fired();			//启动后马上发布一次时间信息
-			call Timer0.startPeriodic(1024 * 30);
-		}
-		else {
-			call AMControl.start();
-		}
-	}
-
-	event void AMControl.stopDone(error_t err) {
-	}
-
 	event void AMSend.sendDone(message_t * msg, error_t error) {
 		if(&pkt == msg) {
 			busy = FALSE;
@@ -82,7 +68,8 @@ implementation {
 	}
 
 	command error_t TelosbTimeSyncBS.Sync(){	//本接口提供的可调用的命令
-		call AMControl.start();
+		signal Timer0.fired();			//启动后马上发布一次时间信息
+		call Timer0.startPeriodic(1024 * 30);
 		return TRUE;
 	}
 	

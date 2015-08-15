@@ -35,7 +35,6 @@ implementation {
 	components EcolStationNeighbourBSP as App;
 	components new TimerMilliC() as Timer0;
 	components new TimerMilliC() as Timer1;
-	components ActiveMessageC;
 	components new AMSenderC(ORWNEIGHBOUR);
 	components new AMReceiverC(ORWNEIGHBOUR);
 	components CollectionC as Collector;
@@ -50,7 +49,6 @@ implementation {
 	App.Timer1 -> Timer1;
 	App.Packet -> AMSenderC;
 	App.AMPacket -> AMSenderC;
-	App.AMControl -> ActiveMessageC;
 	App.AMSend -> AMSenderC;
 	App.Receive -> AMReceiverC;
 	

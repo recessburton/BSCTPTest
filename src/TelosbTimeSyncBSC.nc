@@ -29,7 +29,6 @@ configuration TelosbTimeSyncBSC {
 implementation {
 	components TelosbTimeSyncBSP as App;
 	components new TimerMilliC() as Timer0;
-	components ActiveMessageC;
 	components new AMSenderC(177) as AM1;
 
 	components HilTimerMilliC as BaseTime;
@@ -39,7 +38,6 @@ implementation {
 	App.Timer0->Timer0;
 	App.Packet->AM1;
 	App.AMSend->AM1;
-	App.AMControl->ActiveMessageC;
 
 	App.BaseTime->BaseTime;
 

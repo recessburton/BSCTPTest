@@ -58,6 +58,6 @@ else
 endif
 
 CFLAGS += -DTOSH_DATA_LENGTH=35 \
-          -DCC2420_DEF_RFPOWER=31
+          -DCC2420_DEF_RFPOWER=11
 
 

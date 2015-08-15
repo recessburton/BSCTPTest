@@ -173,6 +173,8 @@ implementation{
 	}
 
 	event void Timer.fired(){
-		call RadioControl.stop();	
+		call RootControl.unsetRoot();
+		call RoutingControl.stop();
+		call RadioControl.stop();
 	}
 }

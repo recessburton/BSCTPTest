@@ -23,5 +23,6 @@
 
 interface EcolStationNeighbourBS{
 	command error_t startNei();
+	command error_t restart();
 	event void neighbourDone(uint8_t* ctpmsg);
 }
