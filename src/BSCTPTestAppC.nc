@@ -20,6 +20,7 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>
  **/
 
+#include "EcolStationBS.h"
 
 configuration BSCTPTestAppC{
 }
@@ -27,26 +28,29 @@ implementation{
 	components BSCTPTestC as App, MainC, LedsC, ActiveMessageC;
 	components CollectionC as Collector;
 	components new CollectionSenderC(0xee);
-	components TelosbTimeSyncBSC;
+	components new TimeSyncTreeC(30720);
 	components EcolStationNeighbourBSC;
 	components new TimerMilliC() as Timer;
 	
-	components new Msp430Uart1C() as UartC;
+	components SerialActiveMessageC;
+	components new SerialAMSenderC(AM_UART);
+	
 	
 	components ResetC;
 	
-	App.Boot                             -> MainC;
-	App.RadioControl            -> ActiveMessageC;
-	App.RoutingControl        -> Collector;
-	App.Leds                             -> LedsC;
-	App.Send                            -> CollectionSenderC;
-	App.RootControl             -> Collector;
-	App.Receive                       -> Collector.Receive[0xee];
-	App.TelosbTimeSyncBS -> TelosbTimeSyncBSC;
+	App.Boot             -> MainC;
+	App.RadioControl     -> ActiveMessageC;
+	App.RoutingControl   -> Collector;
+	App.Leds             -> LedsC;
+	App.Send             -> CollectionSenderC;
+	App.RootControl      -> Collector;
+	App.Receive          -> Collector.Receive[0xee];
+	App.TimeSyncTree     -> TimeSyncTreeC;
 	
-	App.Resource                   -> UartC.Resource;
-	App.UartStream              -> UartC.UartStream;
-	App.UartConfigure         <- UartC.Msp430UartConfigure;
+	App.UARTPacket       -> SerialAMSenderC;
+	App.UARTAMPacket     -> SerialAMSenderC;
+	App.UARTAMSend       -> SerialAMSenderC;
+	App.UARTAMControl    -> SerialActiveMessageC;
 	
 	App.EcolStationNeighbourBS -> EcolStationNeighbourBSC;
 	

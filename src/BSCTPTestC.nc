@@ -23,10 +23,8 @@
 #include "EcolStationBS.h"
 #include "EcolStationNeighbourBS.h"
 #include <stdio.h>
+#include "Leds.h"
 module BSCTPTestC{
-	provides {
-		interface Msp430UartConfigure as UartConfigure;
-	}
 	uses{
 		interface Boot;
 		interface SplitControl as RadioControl;
@@ -35,11 +33,13 @@ module BSCTPTestC{
 		interface Leds;
 		interface RootControl;
 		interface Receive;
-		interface TelosbTimeSyncBS;
+		interface TimeSyncTree;
 		interface EcolStationNeighbourBS;
 		
-		interface Resource;
-		interface UartStream;
+		interface Packet as UARTPacket;
+		interface AMPacket as UARTAMPacket;
+		interface AMSend as UARTAMSend;
+		interface SplitControl as UARTAMControl;
 		
 		interface Reset;
 		interface Timer<TMilli>;
@@ -51,65 +51,25 @@ implementation{
 	uint8_t timeTriggerData[DATASIZE];
 	uint8_t AMrecvdataTemp[DATASIZE - 2 ];
 	uint32_t timeInterval = 0;
-	
-	task void requestUART();
-	task void releaseUART();
+	message_t pkt;
 	
 	event void Boot.booted(){
-		call Timer.startOneShot(7372800);	//两小时重启一次
-		call TelosbTimeSyncBS.Sync();
+		call Timer.startOneShot(3686400);	//一小时重启一次
+		call TimeSyncTree.startTimeSync();
 		call RadioControl.start();	
 		call EcolStationNeighbourBS.startNei();
-		post requestUART();				//请求uart总线
+		call UARTAMControl.start();
 	}
 	
+	event void UARTAMControl.startDone(error_t error){
+	}
 	
-	msp430_uart_union_config_t msp430_uart_config = {{ ubr : UBR_1MHZ_115200, // Baud rate (use enum msp430_uart_rate_t in msp430usart.h for predefined rates)
-			umctl : UMCTL_1MHZ_115200, // Modulation (use enum msp430_uart_rate_t in msp430usart.h for predefined rates)
-			ssel : 0x02, // Clock source (00=UCLKI; 01=ACLK; 10=SMCLK; 11=SMCLK)
-			pena : 0, // Parity enable (0=disabled; 1=enabled)
-			pev : 0, // Parity select (0=odd; 1=even)
-			spb : 0, // Stop bits (0=one stop bit; 1=two stop bits)
-			clen : 1, // Character length (0=7-bit data; 1=8-bit data)
-			listen : 0, // Listen enable (0=disabled; 1=enabled, feed tx back to receiver)
-			mm : 0, // Multiprocessor mode (0=idle-line protocol; 1=address-bit protocol)
-			ckpl : 0, // Clock polarity (0=normal; 1=inverted)
-			urxse : 0, // Receive start-edge detection (0=disabled; 1=enabled)
-			urxeie : 1, // Erroneous-character receive (0=rejected; 1=recieved and URXIFGx set)
-			urxwie : 0, // Wake-up interrupt-enable (0=all characters set URXIFGx; 1=only address sets URXIFGx)
-			utxe : 1, // 1:enable tx module
-			urxe : 1	// 1:enable rx module      
-
-	}};
-
-	async command msp430_uart_union_config_t * UartConfigure.getConfig() {
-		return & msp430_uart_config;
+	event void UARTAMControl.stopDone(error_t error){
+		call UARTAMControl.start();
 	}
 
-	task void requestUART() {
-		call Resource.request();	
-	}
-
-	task void releaseUART() {
-		call Resource.release();
-	}
-
-	event void Resource.granted() {
-	}
-
-	async event void UartStream.sendDone(uint8_t * buf, uint16_t len,error_t error) {
-		if(error == SUCCESS) {
-			call Leds.led0Off();
-		}
-		else {
-		}
-	}
-
-	async event void UartStream.receivedByte(uint8_t byte) {
-	}
-
-	async event void UartStream.receiveDone(uint8_t * buf, uint16_t len, error_t error) {
-		//接收到控制命令
+	event void UARTAMSend.sendDone(message_t *msg, error_t error){
+		call Leds.led0Off();
 	}
 	
 	event void RadioControl.startDone(error_t err){
@@ -138,38 +98,53 @@ implementation{
 		CTPMsg* ctpmsg = (CTPMsg*)payload;
 		int i;
 		uint32_t realtime = 0;
+		uint8_t *ecolStationDataBtrpkt;
+		
+		if(call Leds.get() & LEDS_LED0)
+			call UARTAMControl.stop();
+		
 		memset(AMrecvdataTemp,DATASIZE-2,0);
 		memset(ecolStationData,DATASIZE,0);
 		
 		if(len == DATASIZE-2) 
 		{
-			call Leds.led1Toggle();
-			memcpy(AMrecvdataTemp, ctpmsg, DATASIZE-2);
-			ecolStationData[0] = 0x56;
-			ecolStationData[DATASIZE-1] = 0xAA;
-			
-			for (i = 1;i < DATASIZE-1; i++)
-				ecolStationData[i] = AMrecvdataTemp[i - 1];
-				
+			atomic{
+				memcpy(AMrecvdataTemp, ctpmsg, DATASIZE-2);
+				ecolStationData[0] = 0x56;
+				ecolStationData[DATASIZE-1] = 0xAA;
+				for (i = 1;i < DATASIZE-1; i++)
+					ecolStationData[i] = AMrecvdataTemp[i - 1];
+			}
 			call Leds.led0On();
-			realtime = call TelosbTimeSyncBS.getTime();
-			
-			timeInterval = realtime - ctpmsg ->time;	
-			ecolStationData[DATASIZE-5] =(unsigned char) (timeInterval >>24); //替换时间值为时间差，4字节
-			ecolStationData[DATASIZE-4] =(unsigned char) ((timeInterval&0xff0000) >>16);
-			ecolStationData[DATASIZE-3] =(unsigned char) ((timeInterval&0xff00) >>8);
-			ecolStationData[DATASIZE-2] =(unsigned char) (timeInterval&0xff);
-			call UartStream.send(ecolStationData, DATASIZE);
+			realtime = call TimeSyncTree.getNow();
+			atomic{
+				timeInterval = realtime - ctpmsg ->time;	
+				ecolStationData[DATASIZE-5] =(unsigned char) (timeInterval >>24); //替换时间值为时间差，4字节
+				ecolStationData[DATASIZE-4] =(unsigned char) ((timeInterval&0xff0000) >>16);
+				ecolStationData[DATASIZE-3] =(unsigned char) ((timeInterval&0xff00) >>8);
+				ecolStationData[DATASIZE-2] =(unsigned char) (timeInterval&0xff);
+			}
+			ecolStationDataBtrpkt = (uint8_t*)(call UARTPacket.getPayload(&pkt, DATASIZE));
+			if(ecolStationDataBtrpkt == NULL){
+				while(call TimeSyncTree.getNow() % 10000 != 0){;;}
+				signal Receive.receive(msg, payload, len); 
+				return msg;
+			}
+			memcpy(ecolStationDataBtrpkt, ecolStationData, DATASIZE);
+			call UARTAMSend.send(AM_UART, &pkt, DATASIZE);
 		}
 		return msg;	
 	}
 	
 
-	event void TelosbTimeSyncBS.SyncDone(uint32_t RealTime){
+	event error_t TimeSyncTree.startTimeSyncDone(uint32_t RealTime){
+		return TRUE;
 	}
 
 	event void EcolStationNeighbourBS.neighbourDone(uint8_t *ctpmsg){
-		call UartStream.send(ctpmsg, CTPDATASIZE);
+		uint8_t* btrpkt = (uint8_t*)(call UARTPacket.getPayload(&pkt, CTPDATASIZE));
+		memcpy(btrpkt, ctpmsg, CTPDATASIZE);
+		call UARTAMSend.send(AM_UART, &pkt, CTPDATASIZE);
 	}
 
 	event void Timer.fired(){

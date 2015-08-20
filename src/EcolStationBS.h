@@ -12,4 +12,6 @@ typedef nx_struct CTPMsg{
 
 #define DATASIZE (sizeof(CTPMsg)+2)
 
+#define 	AM_UART  25
+
 #endif /* ECOL_STATION_BS_H */

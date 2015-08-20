@@ -1,7 +1,7 @@
 /**
  Copyright (C),2014-2015, YTC, www.bjfulinux.cn
  Copyright (C),2014-2015, ENS Group, ens.bjfu.edu.cn
- Created on  2015-04-28 10:59
+ Created on  2015-04-27 16:21
  
  @author: ytc recessburton@gmail.com
  @version: 1.0
@@ -20,9 +20,34 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>
  **/
 
+ 
+#include "TimeSyncTree.h"
 
-interface TelosbTimeSyncBS{
-	command error_t Sync();
-	command uint32_t getTime();
-	event void SyncDone(uint32_t RealTime);
+generic configuration TimeSyncTreeC( uint32_t period ) {
+
+	provides interface TimeSyncTree;
+}
+
+implementation {
+
+	components new TimeSyncTreeP(period);
+
+	TimeSyncTree = TimeSyncTreeP.TimeSyncTree;
+
+	components new TimerMilliC() as SyncTimer;
+	TimeSyncTreeP.PeriodicSyncTimer     -> SyncTimer;
+	TimeSyncTreeP.DelayedBroadcastTimer -> SyncTimer;
+
+	components HilTimerMilliC as LocalTimer;
+	TimeSyncTreeP.LocalTime -> LocalTimer;
+			
+	components new AMSenderC(AM_TIME_SYNC_MSG);
+	components new AMReceiverC(AM_TIME_SYNC_MSG);
+
+	TimeSyncTreeP.Packet   -> AMSenderC;
+	TimeSyncTreeP.AMSend   -> AMSenderC;
+	TimeSyncTreeP.Receive  -> AMReceiverC;
+
+	components RandomC;
+	TimeSyncTreeP.Random -> RandomC;
 }
