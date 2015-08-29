@@ -38,7 +38,8 @@ module EcolStationNeighbourBSP {
 	uses interface Send;
 	uses interface RootControl;
 	uses interface Receive as CTPReceive;
-	uses interface TelosbBuiltinSensors;  
+	uses interface TelosbBuiltinSensors; 
+	uses interface CC2420Packet; 
 }
 
 implementation {
@@ -123,6 +124,8 @@ implementation {
 					convertNX();
 					return;
 				}
+				nx_neighbourSet[i].rssi = (nx_int8_t)neighbourSet[i].rssi;
+				nx_neighbourSet[i].lqi = (nx_uint8_t)neighbourSet[i].lqi;
 			}
 		}
 	}
@@ -191,17 +194,25 @@ implementation {
 				continue;
 		}
 		//如果执行到此处，表明该节点不在邻居集合中
+		++neighbourNumIndex;
 		neighbourSet[neighbourNumIndex].nodeid = sourceid;
 		neighbourSet[neighbourNumIndex].linkquality = 0.0f;
 		neighbourSet[neighbourNumIndex].recvCount = 0;
-		return ++neighbourNumIndex;
+		neighbourSet[neighbourNumIndex].rssi = 0;
+    	neighbourSet[neighbourNumIndex].lqi = 0;
+		return neighbourNumIndex;
 	}
 	
-	void updateLinkQCount(int nodeindex){
+	void updateLinkQCount(int nodeindex, message_t * msg){
 		float linkq;
+		int temp1=0,temp2=0;
 		if (nodeindex < 0)
 			return;
+		temp1 = neighbourSet[nodeindex].rssi * neighbourSet[nodeindex].recvCount + RSSI_OFFSET + call CC2420Packet.getRssi(msg);
+		temp2 = neighbourSet[nodeindex].lqi * neighbourSet[nodeindex].recvCount + call CC2420Packet.getLqi(msg);
 		neighbourSet[nodeindex].recvCount ++;	
+		neighbourSet[nodeindex].rssi = (int8_t)(temp1 / (int)neighbourSet[nodeindex].recvCount);
+    	neighbourSet[nodeindex].lqi  = (uint8_t)(temp2 / (int)neighbourSet[nodeindex].recvCount);
 	}
 
 	task void sendPreamble(){
@@ -223,7 +234,7 @@ implementation {
 			}
 			else if ( (btrpkt->dstid - TOS_NODE_ID) == 0) {	//接到的是自己的回包，计算链路质量，判断邻居资格
 				atomic{
-					updateLinkQCount(addSet(btrpkt->sourceid));
+					updateLinkQCount(addSet(btrpkt->sourceid), msg);
 				}
 			}else{	//其它包，丢弃
 			}

@@ -41,6 +41,7 @@ implementation {
 	components ActiveMessageC as CTPAM;
 	components new CollectionSenderC(0xe1);
 	components new TelosbSensorC(100) as TBS;
+	components CC2420ActiveMessageC;
 	
 	EcolStationNeighbourBS = App.EcolStationNeighbourBS;
 
@@ -59,4 +60,6 @@ implementation {
 	App.CTPReceive -> Collector.Receive[0xe1];
 	
 	App.TelosbBuiltinSensors->TBS;
+	
+	App.CC2420Packet -> CC2420ActiveMessageC;
 }
